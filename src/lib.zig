@@ -116,9 +116,5 @@ pub fn PerlinNoise2D(T: type) type {
             const Type = @TypeOf(t);
             return t*t*t*@mulAdd(Type, t, @mulAdd(Type, 6.0, t, -15.0), 10.0);
         }
-
-        pub fn deinit(self: *Self) void {
-            _ = self;
-        } 
     };
 }

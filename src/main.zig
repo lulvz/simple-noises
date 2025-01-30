@@ -1,5 +1,5 @@
 const std = @import("std");
-const noise = @import("noise.zig");
+const noise = @import("lib.zig");
 
 pub fn main() !void {
     var pn = noise.PerlinNoise2D(f64).init(null); 
@@ -12,9 +12,7 @@ pub fn main() !void {
     for(0..100) |x| {
         for(0..100) |y| {
             const generated = pn.generate(@as(f64, @floatFromInt(x))*frequency, @as(f64, @floatFromInt(y))*frequency);
-            if(generated > 1.0) {
-                std.debug.print("{d},{d}:{d}\n", .{x, y, generated});
-            }
+            std.debug.print("{d},{d}:{d}\n", .{x, y, generated});
         }
     }
 }
