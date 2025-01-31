@@ -1,9 +1,12 @@
 const std = @import("std");
 
 pub fn PerlinNoise2D(T: type) type {
-    // if(!@typeInfo(T).Float) {
-    //     @compileError("PerlinNoise2D type must be a floating point type");
-    // }
+    switch(@typeInfo(T)) {
+        .Float => {},
+        else => {
+            @compileError("Expected float type, got " ++ @typeName(T));
+        }
+    }
 
     const default_permutation_table: [256]u8 = .{
         151, 160, 137, 91,  90,  15,  131, 13,  201, 95,  96,  53,  194, 233, 7,   225,
@@ -26,10 +29,11 @@ pub fn PerlinNoise2D(T: type) type {
 
     return struct {
         permutation_table: [512]u8, // the table is duplicated to avoid modulo operations
+        frequency: T,
 
         const Self = @This();
         // seed is optional, pass null to use the default permutation table from the original implementation
-        pub fn init(seed: ?u64) Self {
+        pub fn init(seed: ?u64, frequency: ?T) Self {
             var permutation_table: [512]u8 = undefined;
 
             if(seed) |s| {
@@ -43,18 +47,21 @@ pub fn PerlinNoise2D(T: type) type {
 
             return .{
                 .permutation_table = permutation_table,
+                .frequency = frequency orelse 1.0,
             };
         }
 
         // returns a value between -1.0 and 1.0
         pub fn generate(self: *Self, x: T, y: T) T {
+            const scaled_x = x * self.frequency;
+            const scaled_y = y * self.frequency;
             // first we have to find the grid cell, for that we take the floor of the x and y values
-            const xi: usize = @as(usize, @intFromFloat(x)) & 0xFF;
-            const yi: usize = @as(usize, @intFromFloat(y)) & 0xFF;
+            const xi: usize = @as(usize, @intFromFloat(scaled_x)) & 0xFF;
+            const yi: usize = @as(usize, @intFromFloat(scaled_y)) & 0xFF;
 
             // then we calculate the offset
-            const xf: T = x - @floor(x);
-            const yf: T = y - @floor(y);
+            const xf: T = scaled_x - @floor(scaled_x);
+            const yf: T = scaled_y - @floor(scaled_y);
 
             // now we get the gradient hash values for each corner (0 to 255) from the permutation table
             // which we then use in the gradient function to fetch a random gradient vector
