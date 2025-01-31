@@ -56,8 +56,8 @@ pub fn PerlinNoise2D(T: type) type {
             const scaled_x = x * self.frequency;
             const scaled_y = y * self.frequency;
             // first we have to find the grid cell, for that we take the floor of the x and y values
-            const xi: usize = @as(usize, @intFromFloat(scaled_x)) & 0xFF;
-            const yi: usize = @as(usize, @intFromFloat(scaled_y)) & 0xFF;
+            const xi: usize = @intCast(@as(i64, @intFromFloat(scaled_x)) & 0xFF);
+            const yi: usize = @intCast(@as(i64, @intFromFloat(scaled_y)) & 0xFF);
 
             // then we calculate the offset
             const xf: T = scaled_x - @floor(scaled_x);
