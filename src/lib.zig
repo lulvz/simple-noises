@@ -55,9 +55,11 @@ pub fn PerlinNoise2D(T: type) type {
         pub fn generate(self: *Self, x: T, y: T) T {
             const scaled_x = x * self.frequency;
             const scaled_y = y * self.frequency;
+
             // first we have to find the grid cell, for that we take the floor of the x and y values
-            const xi: usize = @intCast(@as(i64, @intFromFloat(scaled_x)) & 0xFF);
-            const yi: usize = @intCast(@as(i64, @intFromFloat(scaled_y)) & 0xFF);
+            // and we modulo it with 256 (and operation with 255)
+            const xi: usize = @intCast(@as(i64, @intFromFloat(@floor(scaled_x))) & 0xFF);
+            const yi: usize = @intCast(@as(i64, @intFromFloat(@floor(scaled_y))) & 0xFF);
 
             // then we calculate the offset
             const xf: T = scaled_x - @floor(scaled_x);
@@ -100,6 +102,7 @@ pub fn PerlinNoise2D(T: type) type {
             // then we do a dot product of that direction by the local coordinates (xf, yf)
 
             // for now we have 4 directions, one in each diagonal, so (1, 1), (1, -1), (-1, 1), (-1, -1)
+            // TODO possible improvement make this use more directions
             switch (hash & 0x03) {
                 0 => { // (1, 1)
                     return xf + yf; // this (1, 1) . (xf, yf) = xf + yf
