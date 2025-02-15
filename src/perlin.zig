@@ -105,7 +105,7 @@ pub fn PerlinNoise2D(T: type) type {
             // we use a fade function to ease transitions around grid boundaries
             const u = fade(xf);
             const v = fade(yf);
-            
+
             // now we have to interpolate the values we got from the dot products to blend the values
             // first we do it along the x axis
             const ix1 = std.math.lerp(d1, d2, u);
@@ -143,4 +143,108 @@ pub fn PerlinNoise2D(T: type) type {
     };
 }
 
-// TODO add perlin noise 3D
+pub fn PerlinNoise3D(T: type) type {
+    switch(@typeInfo(T)) {
+        .Float => {},
+        else => {
+            @compileError("Expected float type, got " ++ @typeName(T));
+        }
+    }
+
+    return struct {
+        permutation_table: [512]u8,
+        frequency: T,
+
+        const Self = @This();
+        pub fn init(seed: ?u64, frequency: ?T) Self {
+            var permutation_table: [512]u8 = undefined;
+
+            if(seed) |s| {
+                var rng = std.rand.DefaultPrng.init(s);
+                var tmp_permutation_table = default_permutation_table;
+                std.rand.shuffle(rng.random(), u8, &tmp_permutation_table);
+                @memcpy(permutation_table[0..], &tmp_permutation_table ** 2);
+            } else {
+                @memcpy(permutation_table[0..], &default_permutation_table ** 2);
+            }
+
+            return .{
+                .permutation_table = permutation_table,
+                .frequency = frequency orelse 1.0,
+            };
+        }
+
+        pub fn generate(self: *Self, x: T, y: T, z: T) T {
+            const scaled_x = x * self.frequency;
+            const scaled_y = y * self.frequency;
+            const scaled_z = z * self.frequency;
+
+            const IntermediateIntType = switch (@typeInfo(T)) {
+                .Float => |float| switch (float.bits) {
+                    16 => i16,
+                    32 => i32,
+                    64 => i64,
+                    128 => i128,
+                    else => @compileError("Unsupported float type"),
+                },
+                else => unreachable,
+            };
+
+            const xi: usize = @intCast(@as(IntermediateIntType, @intFromFloat(@floor(scaled_x))) & 0xFF);
+            const yi: usize = @intCast(@as(IntermediateIntType, @intFromFloat(@floor(scaled_y))) & 0xFF);
+            const zi: usize = @intCast(@as(IntermediateIntType, @intFromFloat(@floor(scaled_z))) & 0xFF);
+
+            const xf: T = scaled_x - @floor(scaled_x);
+            const yf: T = scaled_y - @floor(scaled_y);
+            const zf: T = scaled_z - @floor(scaled_z);
+
+            const gh1 = self.permutation_table[self.permutation_table[self.permutation_table[xi] + yi] + zi];
+            const gh2 = self.permutation_table[self.permutation_table[self.permutation_table[xi + 1] + yi] + zi];
+            const gh3 = self.permutation_table[self.permutation_table[self.permutation_table[xi] + yi + 1] + zi];
+            const gh4 = self.permutation_table[self.permutation_table[self.permutation_table[xi + 1] + yi + 1] + zi];
+
+            const gh5 = self.permutation_table[self.permutation_table[self.permutation_table[xi] + yi] + zi + 1];
+            const gh6 = self.permutation_table[self.permutation_table[self.permutation_table[xi + 1] + yi] + zi + 1];
+            const gh7 = self.permutation_table[self.permutation_table[self.permutation_table[xi] + yi + 1] + zi + 1];
+            const gh8 = self.permutation_table[self.permutation_table[self.permutation_table[xi + 1] + yi + 1] + zi + 1];
+
+            const d1 = gradient_dot(gh1, xf, yf, zf);
+            const d2 = gradient_dot(gh2, xf - 1, yf, zf);
+            const d3 = gradient_dot(gh3, xf, yf - 1, zf);
+            const d4 = gradient_dot(gh4, xf - 1, yf - 1, zf);
+
+            const d5 = gradient_dot(gh5, xf, yf, zf - 1);
+            const d6 = gradient_dot(gh6, xf - 1, yf, zf - 1);
+            const d7 = gradient_dot(gh7, xf, yf - 1, zf - 1);
+            const d8 = gradient_dot(gh8, xf - 1, yf - 1, zf - 1);
+
+            const u = fade(xf);
+            const v = fade(yf);
+            const w = fade(zf);
+
+            const ix1 = std.math.lerp(d1, d2, u);
+            const ix2 = std.math.lerp(d3, d4, u);
+            const ix3 = std.math.lerp(d5, d6, u);
+            const ix4 = std.math.lerp(d7, d8, u);
+
+            const iy1 = std.math.lerp(ix1, ix2, v);
+            const iy2 = std.math.lerp(ix3, ix4, v);
+
+            return std.math.lerp(iy1, iy2, w);
+        }
+
+        fn gradient_dot(hash: u8, xf: T, yf: T, zf: T) T {
+            switch (hash & 0x07) {
+                0 => return xf + yf + zf,      // (1,1,1)
+                1 => return -xf + yf + zf,     // (-1,1,1)
+                2 => return xf - yf + zf,      // (1,-1,1)
+                3 => return -xf - yf + zf,     // (-1,-1,1)
+                4 => return xf + yf - zf,      // (1,1,-1)
+                5 => return -xf + yf - zf,     // (-1,1,-1)
+                6 => return xf - yf - zf,      // (1,-1,-1)
+                7 => return -xf - yf - zf,     // (-1,-1,-1)
+                else => unreachable,
+            }
+        }
+    };
+}
