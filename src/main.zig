@@ -5,8 +5,9 @@ const IMAGE_SIZE = 1024;
 const float_T = f32;
 
 pub fn main() !void {
-//    try generate2DPerlin(); 
+   try generate2DPerlin(); 
    try generate3DPerlinCrossSection();
+   try generateVoronoi2D();
 }
 
 fn generate2DPerlin() !void {
@@ -38,7 +39,7 @@ fn generate2DPerlin() !void {
 }
 
 fn generate3DPerlinCrossSection() !void {
-    var pn = noise.perlin.PerlinNoise3D(float_T).init(@intCast(std.time.timestamp()), 0.05); 
+    var pn = noise.perlin.PerlinNoise3D(float_T).init(@intCast(std.time.timestamp()), 0.02); 
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -59,6 +60,34 @@ fn generate3DPerlinCrossSection() !void {
     }
 
     const ppm_file = try std.fs.cwd().createFile("images/pnoise3d.ppm", .{});
+    defer ppm_file.close();
+
+    _ = try ppm_file.write(image_header);
+    _ = try ppm_file.write(image_data);
+}
+
+fn generateVoronoi2D() !void {
+    var pn = noise.voronoi.VoronoiNoise2D(float_T).init(@intCast(std.time.timestamp()), 0.01); 
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+
+    // P5 is the grayscale binary format
+    const image_header: []const u8 = std.fmt.comptimePrint("P5\n# vnoise2d\n{d} {d}\n255\n", .{IMAGE_SIZE, IMAGE_SIZE});
+    var image_data: []u8 = undefined;
+    image_data = try allocator.alloc(u8, IMAGE_SIZE*IMAGE_SIZE);
+    defer allocator.free(image_data);
+
+    for(0..IMAGE_SIZE) |x| {
+        for(0..IMAGE_SIZE) |y| {
+            const generated = pn.generate(@as(float_T, @floatFromInt(x)), @as(float_T, @floatFromInt(y)));
+            // std.debug.print("{d},{d}:{d}\n", .{x, y, generated});
+
+            image_data[x*IMAGE_SIZE + y] = @as(u8, @intFromFloat(((generated) * std.math.sqrt1_2) * 255.0));
+        }
+    }
+
+    const ppm_file = try std.fs.cwd().createFile("images/vnoise2d.ppm", .{});
     defer ppm_file.close();
 
     _ = try ppm_file.write(image_header);
