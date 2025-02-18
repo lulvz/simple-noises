@@ -89,32 +89,19 @@ pub fn VoronoiNoise2DV(T: type) type {
         pub fn generate(self: *Self, vec: @Vector(2, T)) T {
             const scaled_vec = vec * @as(@Vector(2, T), @splat(self.frequency));
 
-            // depending on the float type T, we use different sized integers to hold the intermediate integer values
-            const IntermediateIntType = switch (@typeInfo(T)) {
-                .Float => |float| switch (float.bits) {
-                    16 => i16,
-                    32 => i32,
-                    64 => i64,
-                    128 => i128,
-                    else => @compileError("Unsupported float type"),
-                },
-                else => unreachable,
-            };
-
             // find the grid cell
-            const xi: IntermediateIntType = @intFromFloat(@floor(scaled_vec[0]));
-            const yi: IntermediateIntType = @intFromFloat(@floor(scaled_vec[1]));
+            const gc = @floor(scaled_vec);
 
             // initialize a minimum distance variable to the max of the float type
             var min_dist_squared: T = std.math.floatMax(T);
 
             // loop over the adjacent squares in the grid
-            var yc: IntermediateIntType = yi-1;
-            while(yc <= yi + 1) : (yc += 1) {
-                var xc: IntermediateIntType = xi-1;
-                while(xc <= xi + 1) : (xc += 1) {
+            var yc: T = gc[1]-1;
+            while(yc <= gc[1] + 1) : (yc += 1) {
+                var xc: T = gc[0]-1;
+                while(xc <= gc[0] + 1) : (xc += 1) {
                     // float vector representation of the current grid cell
-                    const cv = @Vector(2, T) { @as(T, @floatFromInt(xc)), @as(T, @floatFromInt(yc)) };
+                    const cv = @Vector(2, T) { xc, yc };
 
                     // offset of the seed point in that grid cell calculated by a value noise function
                     const vnoise = value.valueNoiseHash2DV(T, cv);

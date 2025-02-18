@@ -29,14 +29,8 @@ pub fn valueNoiseHash2DV(T: type, vec: @Vector(2, T)) @Vector(2, T) {
         @compileError("Expected float type, got " ++ @typeName(T));
     }
 
-    const rv1 = @Vector(2, T){ 123.4, 345.6 };
-    const rv2 = @Vector(2, T){ 234.5, 456.7 };
-    // const transformed = @mulAdd(
-    //     @Vector(2, T),
-    //     vec,
-    //     rv1,
-    //     vec * rv2
-    // );
+    const rv1 = @Vector(2, T){ 123.4, 234.5 };
+    const rv2 = @Vector(2, T){ 345.6, 456.7 };
 
     const transformed = @Vector(2, T) {
         @reduce(.Add, vec*rv1),
@@ -52,6 +46,8 @@ test "valueNoiseHash2DV" {
     const vf = @Vector(2, f32){1.0, 2.0};
 
     const vr = valueNoiseHash2DV(f32, vf);
+    const a = valueNoiseHash2D(f32, vf[0], vf[1]);
 
     std.debug.print("{}\n", .{vr});
+    std.debug.print("{}\n", .{a});
 }
