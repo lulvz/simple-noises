@@ -25,11 +25,8 @@ inline fn fade(t: anytype) @TypeOf(t) {
 }
 
 pub fn PerlinNoise2D(T: type) type {
-    switch(@typeInfo(T)) {
-        .Float => {},
-        else => {
-            @compileError("Expected float type, got " ++ @typeName(T));
-        }
+    if (!(@typeInfo(T) == .Float)) {
+        @compileError("Expected float type, got " ++ @typeName(T));
     }
 
     return struct {
@@ -144,11 +141,8 @@ pub fn PerlinNoise2D(T: type) type {
 }
 
 pub fn PerlinNoise3D(T: type) type {
-    switch(@typeInfo(T)) {
-        .Float => {},
-        else => {
-            @compileError("Expected float type, got " ++ @typeName(T));
-        }
+    if (!(@typeInfo(T) == .Float)) {
+        @compileError("Expected float type, got " ++ @typeName(T));
     }
 
     return struct {

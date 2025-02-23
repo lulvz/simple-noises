@@ -2,11 +2,8 @@ const std = @import("std");
 const value = @import("value.zig");
 
 pub fn VoronoiNoise2D(T: type) type {
-    switch(@typeInfo(T)) {
-        .Float => {},
-        else => {
-            @compileError("Expected float type, got " ++ @typeName(T));
-        }
+    if (!(@typeInfo(T) == .Float)) {
+        @compileError("Expected float type, got " ++ @typeName(T));
     }
     
     return struct {
@@ -20,9 +17,6 @@ pub fn VoronoiNoise2D(T: type) type {
                 .frequency = frequency,
             };
         }
-
-        // fn distance() T {
-        // }
 
         pub fn generate(self: *Self, x: T, y: T) T {
             const scaled_x = x * self.frequency;
@@ -71,6 +65,63 @@ pub fn VoronoiNoise2D(T: type) type {
             }
 
             return std.math.sqrt(min_dist);
+        }
+    };
+}
+
+pub fn VoronoiNoise2DV(T: type) type {
+    if (!(@typeInfo(T) == .Float)) {
+        @compileError("Expected float type, got " ++ @typeName(T));
+    }
+    
+    return struct {
+        frequency: T,
+
+        const Self = @This();
+
+        pub fn init(seed: u64, frequency: T) Self {
+            _ = seed;
+            return .{
+                .frequency = frequency,
+            };
+        }
+
+        pub fn generate(self: *Self, vec: @Vector(2, T)) T {
+            const scaled_vec = vec * @as(@Vector(2, T), @splat(self.frequency));
+
+            // find the grid cell
+            const gc = @floor(scaled_vec);
+
+            // initialize a minimum distance variable to the max of the float type
+            var min_dist_squared: T = std.math.floatMax(T);
+
+            // loop over the adjacent squares in the grid
+            var yc: T = gc[1]-1;
+            while(yc <= gc[1] + 1) : (yc += 1) {
+                var xc: T = gc[0]-1;
+                while(xc <= gc[0] + 1) : (xc += 1) {
+                    // float vector representation of the current grid cell
+                    const cv = @Vector(2, T) { xc, yc };
+
+                    // offset of the seed point in that grid cell calculated by a value noise function
+                    const vnoise = value.valueNoiseHash2DV(T, cv);
+
+                    // calculate the final seed point position in the grid
+                    const center_pos = cv + vnoise;
+
+                    // direction vector
+                    const dv = center_pos - scaled_vec;
+                    // pythagoras, without sqrt
+                    const dist_squared = @reduce(.Add, dv*dv);
+
+                    if(dist_squared < min_dist_squared) {
+                        min_dist_squared = dist_squared;
+                    }
+                }
+            }
+
+            // finally return the sqrt of the minimum squared distance that was found
+            return @sqrt(min_dist_squared);
         }
     };
 }
