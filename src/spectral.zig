@@ -1,12 +1,12 @@
 const std = @import("std");
 
 pub fn WhiteNoise(T: type) type {
-    if (@typeInfo(T) != .Float) {
+    if (@typeInfo(T) != .float) {
         @compileError("Expected float type, got " ++ @typeName(T));
     }
 
     switch (@typeInfo(T)) {
-        .Float => |float| switch (float.bits) {
+        .float => |float| switch (float.bits) {
             32, 64 => {},
             else => @compileError("Unsupported float type"),
         },
@@ -14,12 +14,12 @@ pub fn WhiteNoise(T: type) type {
     }
 
     return struct {
-        prng: std.rand.Xoshiro256,
+        prng: std.Random.DefaultPrng,
 
         const Self = @This();
 
         pub fn init(seed: u64) Self {
-            const prng = std.rand.DefaultPrng.init(seed);
+            const prng = std.Random.DefaultPrng.init(seed);
 
             return .{
                 .prng = prng,
@@ -35,9 +35,9 @@ pub fn WhiteNoise(T: type) type {
                 t.* = random.float(T);
             }
         }
-        
+
         // Fills the target array with normally distributed random values
-        // Uses the Box-Muller transform to generate values from a standard normal 
+        // Uses the Box-Muller transform to generate values from a standard normal
         // distribution (mean = 0, standard deviation = 1)
         // Theoretically, values can range from -infinity to infinity
         // Potential future improvement: switch to the Ziggurat algorithm for performance
@@ -45,18 +45,18 @@ pub fn WhiteNoise(T: type) type {
             const random = self.prng.random();
             var i: usize = 0;
             // https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
-            while(i < target.len) : (i += 2) {
+            while (i < target.len) : (i += 2) {
                 const u_1 = random.float(T);
                 const u_2 = random.float(T);
 
                 const r = @sqrt(-2 * @log(u_1));
-                const angle = 2*std.math.pi * u_2;
+                const angle = 2 * std.math.pi * u_2;
 
                 const z_0 = r * @cos(angle);
                 target[i] = z_0;
 
                 const next = i + 1;
-                if(next < target.len) {
+                if (next < target.len) {
                     const z_1 = r * @sin(angle);
                     target[next] = z_1;
                 }
@@ -70,12 +70,12 @@ test "white noise uniform distribution" {
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
-    const buffer = try allocator.alloc(f64, 10*10);
+    const buffer = try allocator.alloc(f64, 10 * 10);
     defer allocator.free(buffer);
 
     wn.generate_uniform(buffer);
 
-    for(buffer) |b| {
+    for (buffer) |b| {
         std.debug.print("{d}\n", .{b});
     }
 }

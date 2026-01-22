@@ -1,12 +1,9 @@
 .{
-   .name = "simple-noises",
-
-   .version = "0.0.1",
-
-    .dependencies = .{
-
-    },
-
+    .name = .simple_noises,
+    .version = "0.0.0",
+    .fingerprint = 0xcffa4495f500b42b,
+    .minimum_zig_version = "0.15.2",
+    .dependencies = .{},
     .paths = .{
         "build.zig",
         "build.zig.zon",

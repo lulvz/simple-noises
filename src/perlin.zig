@@ -21,11 +21,11 @@ const default_permutation_table: [256]u8 = .{
 
 inline fn fade(t: anytype) @TypeOf(t) {
     const Type = @TypeOf(t);
-    return t*t*t*@mulAdd(Type, t, @mulAdd(Type, 6.0, t, -15.0), 10.0);
+    return t * t * t * @mulAdd(Type, t, @mulAdd(Type, 6.0, t, -15.0), 10.0);
 }
 
 pub fn PerlinNoise2D(T: type) type {
-    if (!(@typeInfo(T) == .Float)) {
+    if (!(@typeInfo(T) == .float)) {
         @compileError("Expected float type, got " ++ @typeName(T));
     }
 
@@ -38,10 +38,10 @@ pub fn PerlinNoise2D(T: type) type {
         pub fn init(seed: ?u64, frequency: ?T) Self {
             var permutation_table: [512]u8 = undefined;
 
-            if(seed) |s| {
-                var rng = std.rand.DefaultPrng.init(s);
+            if (seed) |s| {
+                var rng = std.Random.DefaultPrng.init(s);
                 var tmp_permutation_table = default_permutation_table;
-                std.rand.shuffle(rng.random(), u8, &tmp_permutation_table);
+                std.Random.shuffle(rng.random(), u8, &tmp_permutation_table);
                 @memcpy(permutation_table[0..], &tmp_permutation_table ** 2);
             } else {
                 @memcpy(permutation_table[0..], &default_permutation_table ** 2);
@@ -60,7 +60,7 @@ pub fn PerlinNoise2D(T: type) type {
 
             // depending on the float type T, we use different sized integers to hold the intermediate integer values
             const IntermediateIntType = switch (@typeInfo(T)) {
-                .Float => |float| switch (float.bits) {
+                .float => |float| switch (float.bits) {
                     16 => i16,
                     32 => i32,
                     64 => i64,
@@ -134,14 +134,14 @@ pub fn PerlinNoise2D(T: type) type {
                 },
                 else => {
                     unreachable;
-                }
+                },
             }
         }
     };
 }
 
 pub fn PerlinNoise3D(T: type) type {
-    if (!(@typeInfo(T) == .Float)) {
+    if (!(@typeInfo(T) == .float)) {
         @compileError("Expected float type, got " ++ @typeName(T));
     }
 
@@ -153,10 +153,10 @@ pub fn PerlinNoise3D(T: type) type {
         pub fn init(seed: ?u64, frequency: ?T) Self {
             var permutation_table: [512]u8 = undefined;
 
-            if(seed) |s| {
-                var rng = std.rand.DefaultPrng.init(s);
+            if (seed) |s| {
+                var rng = std.Random.DefaultPrng.init(s);
                 var tmp_permutation_table = default_permutation_table;
-                std.rand.shuffle(rng.random(), u8, &tmp_permutation_table);
+                std.Random.shuffle(rng.random(), u8, &tmp_permutation_table);
                 @memcpy(permutation_table[0..], &tmp_permutation_table ** 2);
             } else {
                 @memcpy(permutation_table[0..], &default_permutation_table ** 2);
@@ -174,7 +174,7 @@ pub fn PerlinNoise3D(T: type) type {
             const scaled_z = z * self.frequency;
 
             const IntermediateIntType = switch (@typeInfo(T)) {
-                .Float => |float| switch (float.bits) {
+                .float => |float| switch (float.bits) {
                     16 => i16,
                     32 => i32,
                     64 => i64,
@@ -229,14 +229,14 @@ pub fn PerlinNoise3D(T: type) type {
 
         fn gradient_dot(hash: u8, xf: T, yf: T, zf: T) T {
             switch (hash & 0x07) {
-                0 => return xf + yf + zf,      // (1,1,1)
-                1 => return -xf + yf + zf,     // (-1,1,1)
-                2 => return xf - yf + zf,      // (1,-1,1)
-                3 => return -xf - yf + zf,     // (-1,-1,1)
-                4 => return xf + yf - zf,      // (1,1,-1)
-                5 => return -xf + yf - zf,     // (-1,1,-1)
-                6 => return xf - yf - zf,      // (1,-1,-1)
-                7 => return -xf - yf - zf,     // (-1,-1,-1)
+                0 => return xf + yf + zf, // (1,1,1)
+                1 => return -xf + yf + zf, // (-1,1,1)
+                2 => return xf - yf + zf, // (1,-1,1)
+                3 => return -xf - yf + zf, // (-1,-1,1)
+                4 => return xf + yf - zf, // (1,1,-1)
+                5 => return -xf + yf - zf, // (-1,1,-1)
+                6 => return xf - yf - zf, // (1,-1,-1)
+                7 => return -xf - yf - zf, // (-1,-1,-1)
                 else => unreachable,
             }
         }
